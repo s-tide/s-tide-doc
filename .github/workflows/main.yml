@@ -1,0 +1,67 @@
+name: Deploy VitePress site to Pages
+
+on:
+  # 触发条件：推送到 main 分支或手动触发
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# 设置权限（必须包含 pages 写入权限）
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 防止并发部署冲突
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  # 构建任务
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 获取完整历史（如需 lastUpdated 功能）
+
+      # 可选：如果你使用 pnpm/yarn/bun，取消对应注释
+      # - uses: pnpm/action-setup@v3
+      #   with:
+      #     version: 9
+      # - uses: oven-sh/setup-bun@v1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'  # 根据你的包管理器改为 pnpm/yarn/bun
+
+      - name: Setup GitHub Pages
+        uses: actions/configure-pages@v4
+
+      - name: Install dependencies
+        run: npm ci  # 或 pnpm install / yarn install / bun install
+
+      - name: Build VitePress site
+        run: npm run build  # 关键修改：构建命令指向根目录
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .vitepress/dist  # 关键修改：输出路径改为根目录
+
+  # 部署任务
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    needs: build
+    runs-on: ubuntu-latest
+    name: Deploy
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
