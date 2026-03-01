@@ -5,7 +5,7 @@ export default defineConfig({
   title: "vitepress-template",
   description: "A starter template for VitePress",
   // srcDir: 'pages',
-  outDir: '.vitepress/dist',
+  outDir: 'docs/.vitepress/dist',
   base: process.env.NODE_ENV === 'production' ? '/s-tide-doc/' : '/',
   ignoreDeadLinks: true,
   cleanUrls: true,
